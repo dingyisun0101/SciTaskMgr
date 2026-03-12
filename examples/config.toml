@@ -1,0 +1,34 @@
+schema_version = 1
+
+[run]
+name = "demo"
+task_type = "noise_strength_sweep"
+num_tasks = 50
+max_epochs = 200
+
+[io]
+root_dir = "/path/to/your/project"
+trajectory_dir = "/path/to/your/project/trajectories"
+checkpoint_dir = "/path/to/your/project/checkpoints"
+
+[checkpoint]
+resume = "if_available"
+cleanup_invalid = true
+sync_group_epochs = false
+
+[progress]
+enabled = true
+refresh_hz = 5
+
+[task]
+mission = "batch-2"
+steps = [3, 4]
+noise_levels = [0.0, 0.0001, 0.001, 0.01]
+model_family = "glv"
+
+[task.parameters]
+k = 100
+dt = 0.1
+cutoff = 1e-7
+epoch_len_sde = 30000
+epoch_len_lattice = 3000
