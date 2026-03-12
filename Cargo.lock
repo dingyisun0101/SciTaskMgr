@@ -127,6 +127,7 @@ version = "0.0.1"
 dependencies = [
  "sci_task_io",
  "serde",
+ "serde_json",
  "toml",
 ]
 

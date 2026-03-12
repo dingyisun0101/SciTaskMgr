@@ -1,4 +1,8 @@
+use std::io;
+use std::path::PathBuf;
+
 use sci_task_io::trajectory::TrajectoryHub;
+use sci_task_io::trajectory::{Trajectory, TrajectoryWriteHandle};
 
 use crate::progress::ProgressHandle;
 
@@ -32,5 +36,23 @@ impl<'a> TaskContext<'a> {
     /// Return the epoch number assigned by the task group.
     pub fn epoch(&self) -> u64 {
         self.epoch
+    }
+
+    /// Submit one owned epoch trajectory to the shared hub.
+    pub fn submit_trajectory(
+        &self,
+        trajectory: Trajectory,
+        path: impl Into<PathBuf>,
+    ) -> io::Result<()> {
+        trajectory.send_to_hub(self.hub, path)
+    }
+
+    /// Submit one owned epoch trajectory and return a handle that can wait for completion.
+    pub fn submit_trajectory_tracked(
+        &self,
+        trajectory: Trajectory,
+        path: impl Into<PathBuf>,
+    ) -> io::Result<TrajectoryWriteHandle> {
+        trajectory.send_to_hub_tracked(self.hub, path)
     }
 }

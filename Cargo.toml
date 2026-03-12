@@ -16,4 +16,5 @@ categories = ["science"]
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 sci_task_io = { version = "0.0.4" }
+serde_json = "1.0"
 toml = "0.9.8"
