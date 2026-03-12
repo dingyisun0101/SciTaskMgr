@@ -1,5 +1,6 @@
 use super::Task;
 
+/// Build one task from one owned config value.
 pub fn build_task<T>(config: T::Config) -> Result<T, T::Error>
 where
     T: Task,
@@ -7,6 +8,7 @@ where
     T::new(config)
 }
 
+/// Build `num_tasks` identical tasks by cloning one config value.
 pub fn build_task_copies<T>(config: T::Config, num_tasks: usize) -> Result<Vec<T>, T::Error>
 where
     T: Task,
@@ -18,6 +20,7 @@ where
     Ok(tasks)
 }
 
+/// Build one task per config from a list of distinct config values.
 pub fn build_tasks_from_configs<T>(configs: Vec<T::Config>) -> Result<Vec<T>, T::Error>
 where
     T: Task,

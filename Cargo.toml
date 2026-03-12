@@ -15,4 +15,5 @@ categories = ["science"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
+sci_task_io = { path = "../sci_task_io/dev/rust" }
 toml = "0.9.8"

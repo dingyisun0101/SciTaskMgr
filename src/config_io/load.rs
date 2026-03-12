@@ -3,6 +3,7 @@ use std::path::Path;
 
 use super::{ConfigError, ManagerConfig};
 
+/// Read, parse, and validate a manager config from a TOML file path.
 pub fn load_config(path: impl AsRef<Path>) -> Result<ManagerConfig, ConfigError> {
     let path = path.as_ref();
     let raw = fs::read_to_string(path).map_err(ConfigError::Io)?;

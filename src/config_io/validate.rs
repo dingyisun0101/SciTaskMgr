@@ -1,5 +1,6 @@
 use super::{ConfigError, ManagerConfig, SUPPORTED_SCHEMA_VERSION};
 
+/// Validate a parsed config against the manager-owned envelope contract.
 pub fn validate_config(config: &ManagerConfig) -> Result<(), ConfigError> {
     if config.schema_version != SUPPORTED_SCHEMA_VERSION {
         return Err(ConfigError::UnsupportedSchemaVersion {
