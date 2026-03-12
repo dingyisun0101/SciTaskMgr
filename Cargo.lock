@@ -113,6 +113,8 @@ dependencies = [
 [[package]]
 name = "sci_task_io"
 version = "0.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73ab551e6e60100202f19d43633b719cf3cac8c31e91924fdcf85fbc3b16d722"
 dependencies = [
  "crossbeam",
  "serde",
