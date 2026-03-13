@@ -7,7 +7,7 @@ pub trait Task: Sized + Send + 'static {
     /// Task-specific checkpoint type used for rebuild.
     type Checkpoint: Send + 'static;
     /// Error type returned by task construction and execution.
-    type Error;
+    type Error: Send;
 
     /// Construct a fresh task from owned config.
     fn new(config: Self::Config) -> Result<Self, Self::Error>;

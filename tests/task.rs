@@ -1,20 +1,24 @@
 use std::convert::Infallible;
+use std::sync::Arc;
 
 use sci_task_io::trajectory::TrajectoryHub;
 use sci_task_mgr::progress::{ProgressEventKind, new_progress_store, ProgressHandle};
 use sci_task_mgr::task::{Task, TaskContext, build_task, build_task_copies, build_tasks_from_configs};
 
+/// Minimal config used by the task-construction tests.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct DummyConfig {
     label: String,
     initial_epoch: usize,
 }
 
+/// Minimal checkpoint used by the task-rebuild test.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct DummyCheckpoint {
     epoch: usize,
 }
 
+/// Basic task fixture used to exercise the generic task helpers.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct DummyTask {
     config: DummyConfig,
@@ -61,6 +65,7 @@ impl Task for DummyTask {
     }
 }
 
+/// Verify that one owned config builds one task instance.
 #[test]
 fn builds_single_task_from_owned_config() {
     let config = DummyConfig {
@@ -75,6 +80,7 @@ fn builds_single_task_from_owned_config() {
     assert_eq!(task.trajectory, vec![3]);
 }
 
+/// Verify that cloned configs produce the requested number of tasks.
 #[test]
 fn clones_config_when_building_multiple_tasks() {
     let config = DummyConfig {
@@ -90,6 +96,7 @@ fn clones_config_when_building_multiple_tasks() {
     assert!(tasks.iter().all(|task| task.trajectory == vec![1]));
 }
 
+/// Verify that distinct configs map to distinct task instances.
 #[test]
 fn builds_tasks_from_distinct_configs() {
     let configs = vec![
@@ -112,6 +119,7 @@ fn builds_tasks_from_distinct_configs() {
     assert_eq!(tasks[1].trajectory, vec![5]);
 }
 
+/// Verify that a task can be reconstructed from checkpoint state.
 #[test]
 fn can_rebuild_task_from_checkpoint() {
     let config = DummyConfig {
@@ -126,6 +134,7 @@ fn can_rebuild_task_from_checkpoint() {
     assert_eq!(task.trajectory, vec![7]);
 }
 
+/// Verify that the manager-owned task context drives one epoch correctly.
 #[test]
 fn evolves_with_task_context() {
     let hub = TrajectoryHub::start(1).expect("hub should start");
@@ -136,7 +145,13 @@ fn evolves_with_task_context() {
     .expect("task should build");
     let (tx, mut store) = new_progress_store();
     let progress = ProgressHandle::new(0, 3, tx);
-    let context = TaskContext::new(&hub, &progress, 3);
+    let compute_pool = Arc::new(
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(1)
+            .build()
+            .expect("pool should build"),
+    );
+    let context = TaskContext::new(&hub, &progress, 3, 1, compute_pool);
 
     task.evolve_one_epoch(&context).expect("task should evolve");
     store.drain();

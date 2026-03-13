@@ -42,9 +42,15 @@ pub struct RunConfig {
     pub name: String,
     /// Identifier used to select the concrete task implementation.
     pub task_type: String,
+    /// Maximum number of threads one task may use for its own internal work.
+    #[serde(alias = "NUM_THREADS")]
+    pub num_threads: usize,
     /// Optional number of task instances requested by the user.
     #[serde(default)]
     pub num_tasks: Option<usize>,
+    /// Optional cap on how many tasks may advance concurrently within one group epoch.
+    #[serde(default, alias = "NUM_TASK_THREADS")]
+    pub num_task_threads: Option<usize>,
     /// Optional manager-level epoch cap.
     #[serde(default)]
     pub max_epochs: Option<u64>,

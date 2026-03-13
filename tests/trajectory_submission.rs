@@ -1,21 +1,24 @@
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use sci_task_io::trajectory::{Trajectory, TrajectoryHub};
+use sci_task_io::trajectory::Trajectory;
 use sci_task_mgr::task::{Task, TaskContext};
-use sci_task_mgr::task_group::TaskGroup;
+use sci_task_mgr::task_group::{TaskGroup, TaskGroupConfig};
 
+/// Config fixture for a task that writes one trajectory file per epoch.
 #[derive(Debug, Clone)]
 struct SubmissionConfig {
     output_path: PathBuf,
     initial_epoch: u64,
 }
 
+/// Checkpoint fixture for the trajectory-submission task.
 #[derive(Debug, Clone)]
 struct SubmissionCheckpoint {
     epoch: u64,
 }
 
+/// Task fixture that submits a tracked trajectory write during each epoch.
 #[derive(Debug)]
 struct SubmissionTask {
     config: SubmissionConfig,
@@ -68,6 +71,7 @@ impl Task for SubmissionTask {
     }
 }
 
+/// Generate a collision-resistant temporary output path for trajectory tests.
 fn unique_output_path() -> PathBuf {
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -76,6 +80,7 @@ fn unique_output_path() -> PathBuf {
     std::env::temp_dir().join(format!("sci_task_mgr_epoch_submission_{nonce}.json"))
 }
 
+/// Verify that trajectories submitted through `TaskContext` reach the shared hub.
 #[test]
 fn task_submits_epoch_trajectory_through_context_hub() {
     let output_path = unique_output_path();
@@ -84,8 +89,13 @@ fn task_submits_epoch_trajectory_through_context_hub() {
         initial_epoch: 0,
     };
     let task = SubmissionTask::new(config).expect("task should build");
-    let hub = TrajectoryHub::start(1).expect("hub should start");
-    let mut group = TaskGroup::new(vec![task], hub);
+    let mut group = TaskGroup::new(TaskGroupConfig {
+        num_writer_threads: 1,
+        task_num_threads: 1,
+        num_task_threads: Some(1),
+    })
+    .expect("group should build");
+    group.add_task(task).expect("task should be added");
 
     group.run_one_epoch().expect("group should run");
     group.drain_progress();

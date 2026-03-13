@@ -88,6 +88,8 @@ The current contract is:
 - shared `TrajectoryHub` access
 - progress reporting handle
 - manager-assigned epoch number
+- task-scoped Rayon compute pool access
+- task-scoped `num_threads` limit for internal parallel work
 
 ## Task Groups
 
@@ -95,7 +97,9 @@ The current contract is:
 
 It currently supports:
 
-- constructing a group from tasks plus a shared `TrajectoryHub`
+- constructing a group from manager-owned runtime config
+- adding tasks after construction
+- configuring per-task compute threads and task-group parallelism
 - running one epoch across all tasks
 - running multiple epochs
 - draining and inspecting collected progress events

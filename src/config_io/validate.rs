@@ -23,6 +23,20 @@ pub fn validate_config(config: &ManagerConfig) -> Result<(), ConfigError> {
         ));
     }
 
+    if config.run.num_threads == 0 {
+        return Err(ConfigError::InvalidField(
+            "run.num_threads",
+            "num_threads must be greater than zero".to_string(),
+        ));
+    }
+
+    if config.run.num_task_threads == Some(0) {
+        return Err(ConfigError::InvalidField(
+            "run.num_task_threads",
+            "num_task_threads must be greater than zero when provided".to_string(),
+        ));
+    }
+
     if config.io.root_dir.trim().is_empty() {
         return Err(ConfigError::InvalidField(
             "io.root_dir",
