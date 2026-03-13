@@ -18,7 +18,7 @@ This crate is still early-stage. The implemented surface today includes:
 - `config_io`
   - TOML-only manager config loading
   - schema version validation
-  - minimal universal envelope: `run`, `io`, `checkpoint`, optional `progress`, and opaque `task`
+  - minimal universal envelope: `run`, `io`, optional `progress`, and opaque `task`
 - `task`
   - `Task` trait
   - config-owned task construction helpers
@@ -48,11 +48,12 @@ Current manager-owned envelope:
 - `schema_version`
 - `run`
 - `io`
-- `checkpoint`
 - `progress`
 - `task`
 
 The `task` section is intentionally left opaque to the manager so end users and concrete task implementations can define most of the scientific payload themselves.
+
+The `io.task_dir` field is the only required manager-owned path. Trajectories are expected under `task_dir/trajectories`.
 
 ## Core API
 

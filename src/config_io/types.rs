@@ -14,8 +14,6 @@ pub struct ManagerConfig {
     pub run: RunConfig,
     /// Manager-owned output and filesystem locations.
     pub io: IoConfig,
-    /// Generic checkpoint and resume policy.
-    pub checkpoint: CheckpointConfig,
     /// Optional manager-owned progress settings.
     #[serde(default)]
     pub progress: Option<ProgressConfig>,
@@ -59,39 +57,15 @@ pub struct RunConfig {
 /// Generic directories used by the manager.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct IoConfig {
-    /// Base output directory for the run.
-    pub root_dir: String,
-    /// Optional directory for trajectory files.
-    #[serde(default)]
-    pub trajectory_dir: Option<String>,
-    /// Optional directory for checkpoint files.
-    #[serde(default)]
-    pub checkpoint_dir: Option<String>,
+    /// Base directory for task-owned outputs and trajectories.
+    pub task_dir: String,
 }
 
-/// Generic checkpoint policy that applies regardless of task type.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct CheckpointConfig {
-    /// Resume behavior when existing checkpoints are present.
-    pub resume: ResumePolicy,
-    /// Whether known-invalid checkpoint files should be removed automatically.
-    #[serde(default)]
-    pub cleanup_invalid: bool,
-    /// Whether grouped tasks should be synchronized to a shared epoch.
-    #[serde(default)]
-    pub sync_group_epochs: bool,
-}
-
-/// Resume policy understood by the manager.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum ResumePolicy {
-    /// Ignore existing checkpoints and always start from scratch.
-    Never,
-    /// Resume if checkpoints exist, otherwise start fresh.
-    IfAvailable,
-    /// Require checkpoints to exist before the run may start.
-    Require,
+impl IoConfig {
+    /// Return the trajectory directory implied by `task_dir`.
+    pub fn trajectory_dir(&self) -> String {
+        format!("{}/trajectories", self.task_dir.trim_end_matches('/'))
+    }
 }
 
 /// Optional generic progress settings owned by the manager.

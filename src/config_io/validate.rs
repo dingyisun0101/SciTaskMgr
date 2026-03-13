@@ -37,10 +37,10 @@ pub fn validate_config(config: &ManagerConfig) -> Result<(), ConfigError> {
         ));
     }
 
-    if config.io.root_dir.trim().is_empty() {
+    if config.io.task_dir.trim().is_empty() {
         return Err(ConfigError::InvalidField(
-            "io.root_dir",
-            "root dir must not be empty".to_string(),
+            "io.task_dir",
+            "task_dir must not be empty".to_string(),
         ));
     }
 
