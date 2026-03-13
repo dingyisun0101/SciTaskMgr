@@ -16,9 +16,11 @@ Trajectory persistence is delegated to [`sci_task_io`](https://github.com/dingyi
 This crate is still early-stage. The implemented surface today includes:
 
 - `config_io`
-  - TOML-only manager config loading
+  - TOML-only task-group config and task-config loading
   - schema version validation
-  - minimal universal envelope: `run`, `io`, optional `progress`, and opaque `task`
+  - task-group-only envelope: `run`, `io`, and optional `progress`
+- `runner`
+  - manager-owned task construction and execution from `TaskGroupConfig`
 - `task`
   - `Task` trait
   - config-owned task construction helpers
@@ -39,27 +41,30 @@ sci_task_mgr = "0.0.1"
 
 ## Config
 
-Manager config is TOML-only.
+Task-group config is TOML-only.
 
-Example: [`examples/config.toml`](/home/mgr/Projects/sci_task_mgr/examples/config.toml)
+Examples:
 
-Current manager-owned envelope:
+- [`examples/task_group_config.toml`](/home/mgr/Projects/sci_task_mgr/examples/task_group_config.toml)
+- [`examples/task_config.toml`](/home/mgr/Projects/sci_task_mgr/examples/task_config.toml)
+
+Current task-group-owned envelope:
 
 - `schema_version`
 - `run`
 - `io`
 - `progress`
-- `task`
 
-The `task` section is intentionally left opaque to the manager so end users and concrete task implementations can define most of the scientific payload themselves.
+Task-owned scientific config lives separately, either as a TOML file loaded with `load_task_config(...)` or as programmatic `Vec<T::Config>` values.
 
-The `io.task_dir` field is the only required manager-owned path. Trajectories are expected under `task_dir/trajectories`.
+The `io.task_group_dir` field is the only required manager-owned path. Per-task directories are derived automatically under `task_group_dir/tasks/task_XXXX`.
 
 ## Core API
 
 Main modules:
 
 - `sci_task_mgr::config_io`
+- `sci_task_mgr::runner`
 - `sci_task_mgr::task`
 - `sci_task_mgr::task_group`
 - `sci_task_mgr::progress`
@@ -67,8 +72,10 @@ Main modules:
 Important types:
 
 - `ManagerConfig`
+- `TaskGroupConfig`
 - `Task`
 - `TaskContext`
+- `TaskRunnerError`
 - `TaskGroup`
 - `ProgressHandle`
 - `ProgressStore`
@@ -80,7 +87,6 @@ Concrete tasks implement `Task` and own their config directly.
 The current contract is:
 
 - `new(config)`
-- `rebuild_from(config, checkpoint)`
 - `config()`
 - `evolve_one_epoch(&mut self, context)`
 
@@ -88,9 +94,20 @@ The current contract is:
 
 - shared `TrajectoryHub` access
 - progress reporting handle
+- manager-assigned task index
 - manager-assigned epoch number
 - task-scoped Rayon compute pool access
 - task-scoped `num_threads` limit for internal parallel work
+- manager-owned trajectory directory
+- manager-owned trajectory submission with derived paths
+
+Typical end-user entry point:
+
+```rust
+use sci_task_mgr::runner::run_tasks_from_configs;
+
+let finished_tasks = run_tasks_from_configs::<MyTask>(&task_group_config, task_configs)?;
+```
 
 ## Task Groups
 

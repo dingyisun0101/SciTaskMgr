@@ -4,21 +4,16 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use rayon::current_num_threads;
+use serde::Serialize;
 use sci_task_mgr::progress::{ProgressEventKind, new_progress_store, ProgressHandle};
 use sci_task_mgr::task::{Task, TaskContext};
-use sci_task_mgr::task_group::{TaskGroup, TaskGroupConfig};
+use sci_task_mgr::task_group::{TaskGroup, TaskGroupRuntimeConfig};
 
 /// Minimal config used by the task-group runner tests.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 struct DummyConfig {
     label: String,
     initial_epoch: usize,
-}
-
-/// Minimal checkpoint used by the task-group runner tests.
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct DummyCheckpoint {
-    epoch: usize,
 }
 
 /// Basic task fixture that records epochs and observed compute-pool width.
@@ -32,7 +27,6 @@ struct DummyTask {
 
 impl Task for DummyTask {
     type Config = DummyConfig;
-    type Checkpoint = DummyCheckpoint;
     type Error = Infallible;
 
     fn new(config: Self::Config) -> Result<Self, Self::Error> {
@@ -41,18 +35,6 @@ impl Task for DummyTask {
             trajectory: vec![config.initial_epoch],
             compute_threads_seen: 0,
             config,
-        })
-    }
-
-    fn rebuild_from(
-        config: Self::Config,
-        checkpoint: Self::Checkpoint,
-    ) -> Result<Self, Self::Error> {
-        Ok(Self {
-            config,
-            epoch: checkpoint.epoch,
-            trajectory: vec![checkpoint.epoch],
-            compute_threads_seen: 0,
         })
     }
 
@@ -87,8 +69,8 @@ fn runs_one_epoch_across_all_tasks() {
         })
         .expect("task should build"),
     ];
-    let mut group = TaskGroup::new(TaskGroupConfig {
-        num_writer_threads: 1,
+    let mut group = TaskGroup::new(TaskGroupRuntimeConfig {
+        task_group_dir: std::env::temp_dir().join("sci_task_mgr_group_one_epoch"),
         task_num_threads: 2,
         num_task_threads: None,
     })
@@ -99,7 +81,6 @@ fn runs_one_epoch_across_all_tasks() {
     group.drain_progress();
 
     assert_eq!(group.epochs_run(), 1);
-    assert_eq!(group.num_writer_threads(), 1);
     assert_eq!(group.task_num_threads(), 2);
     assert_eq!(group.num_task_threads(), None);
     assert_eq!(group.tasks()[0].trajectory, vec![0, 1]);
@@ -120,8 +101,8 @@ fn runs_multiple_epochs() {
         })
         .expect("task should build"),
     ];
-    let mut group = TaskGroup::new(TaskGroupConfig {
-        num_writer_threads: 1,
+    let mut group = TaskGroup::new(TaskGroupRuntimeConfig {
+        task_group_dir: std::env::temp_dir().join("sci_task_mgr_group_many_epochs"),
         task_num_threads: 3,
         num_task_threads: Some(1),
     })
@@ -147,8 +128,8 @@ fn exposes_task_accessors() {
         })
         .expect("task should build"),
     ];
-    let mut group = TaskGroup::new(TaskGroupConfig {
-        num_writer_threads: 1,
+    let mut group = TaskGroup::new(TaskGroupRuntimeConfig {
+        task_group_dir: std::env::temp_dir().join("sci_task_mgr_group_accessors"),
         task_num_threads: 1,
         num_task_threads: Some(1),
     })
@@ -168,7 +149,16 @@ fn exposes_task_accessors() {
             .build()
             .expect("pool should build"),
     );
-    let context = TaskContext::new(&hub, &progress, 2, 1, compute_pool);
+    let context = TaskContext::new(
+        &hub,
+        &progress,
+        0,
+        2,
+        1,
+        std::env::temp_dir().join("sci_task_mgr_group_accessors_task"),
+        Arc::new(std::sync::atomic::AtomicU64::new(0)),
+        compute_pool,
+    );
     group.tasks_mut()[0]
         .evolve_one_epoch(&context)
         .expect("task mutation should work");
@@ -188,17 +178,9 @@ struct ConcurrencyTask {
 
 impl Task for ConcurrencyTask {
     type Config = ();
-    type Checkpoint = ();
     type Error = Infallible;
 
     fn new(_config: Self::Config) -> Result<Self, Self::Error> {
-        unreachable!("not used in test")
-    }
-
-    fn rebuild_from(
-        _config: Self::Config,
-        _checkpoint: Self::Checkpoint,
-    ) -> Result<Self, Self::Error> {
         unreachable!("not used in test")
     }
 
@@ -227,8 +209,8 @@ fn caps_how_many_tasks_run_in_parallel() {
             max_active: Arc::clone(&max_active),
         })
         .collect();
-    let mut group = TaskGroup::new(TaskGroupConfig {
-        num_writer_threads: 1,
+    let mut group = TaskGroup::new(TaskGroupRuntimeConfig {
+        task_group_dir: std::env::temp_dir().join("sci_task_mgr_group_concurrency"),
         task_num_threads: 1,
         num_task_threads: Some(2),
     })

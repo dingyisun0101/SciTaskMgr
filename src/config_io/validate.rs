@@ -1,7 +1,7 @@
-use super::{ConfigError, ManagerConfig, SUPPORTED_SCHEMA_VERSION};
+use super::{ConfigError, SUPPORTED_SCHEMA_VERSION, TaskGroupConfig};
 
 /// Validate a parsed config against the manager-owned envelope contract.
-pub fn validate_config(config: &ManagerConfig) -> Result<(), ConfigError> {
+pub fn validate_config(config: &TaskGroupConfig) -> Result<(), ConfigError> {
     if config.schema_version != SUPPORTED_SCHEMA_VERSION {
         return Err(ConfigError::UnsupportedSchemaVersion {
             found: config.schema_version,
@@ -37,10 +37,10 @@ pub fn validate_config(config: &ManagerConfig) -> Result<(), ConfigError> {
         ));
     }
 
-    if config.io.task_dir.trim().is_empty() {
+    if config.io.task_group_dir.trim().is_empty() {
         return Err(ConfigError::InvalidField(
-            "io.task_dir",
-            "task_dir must not be empty".to_string(),
+            "io.task_group_dir",
+            "task_group_dir must not be empty".to_string(),
         ));
     }
 

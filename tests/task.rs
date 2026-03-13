@@ -1,21 +1,16 @@
 use std::convert::Infallible;
 use std::sync::Arc;
 
+use serde::Serialize;
 use sci_task_io::trajectory::TrajectoryHub;
 use sci_task_mgr::progress::{ProgressEventKind, new_progress_store, ProgressHandle};
 use sci_task_mgr::task::{Task, TaskContext, build_task, build_task_copies, build_tasks_from_configs};
 
 /// Minimal config used by the task-construction tests.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 struct DummyConfig {
     label: String,
     initial_epoch: usize,
-}
-
-/// Minimal checkpoint used by the task-rebuild test.
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct DummyCheckpoint {
-    epoch: usize,
 }
 
 /// Basic task fixture used to exercise the generic task helpers.
@@ -28,7 +23,6 @@ struct DummyTask {
 
 impl Task for DummyTask {
     type Config = DummyConfig;
-    type Checkpoint = DummyCheckpoint;
     type Error = Infallible;
 
     fn new(config: Self::Config) -> Result<Self, Self::Error> {
@@ -36,17 +30,6 @@ impl Task for DummyTask {
             epoch: config.initial_epoch,
             trajectory: vec![config.initial_epoch],
             config,
-        })
-    }
-
-    fn rebuild_from(
-        config: Self::Config,
-        checkpoint: Self::Checkpoint,
-    ) -> Result<Self, Self::Error> {
-        Ok(Self {
-            config,
-            epoch: checkpoint.epoch,
-            trajectory: vec![checkpoint.epoch],
         })
     }
 
@@ -119,21 +102,6 @@ fn builds_tasks_from_distinct_configs() {
     assert_eq!(tasks[1].trajectory, vec![5]);
 }
 
-/// Verify that a task can be reconstructed from checkpoint state.
-#[test]
-fn can_rebuild_task_from_checkpoint() {
-    let config = DummyConfig {
-        label: "demo".to_string(),
-        initial_epoch: 0,
-    };
-    let checkpoint = DummyCheckpoint { epoch: 7 };
-
-    let task = DummyTask::rebuild_from(config, checkpoint).expect("task should rebuild");
-
-    assert_eq!(task.epoch, 7);
-    assert_eq!(task.trajectory, vec![7]);
-}
-
 /// Verify that the manager-owned task context drives one epoch correctly.
 #[test]
 fn evolves_with_task_context() {
@@ -151,7 +119,16 @@ fn evolves_with_task_context() {
             .build()
             .expect("pool should build"),
     );
-    let context = TaskContext::new(&hub, &progress, 3, 1, compute_pool);
+    let context = TaskContext::new(
+        &hub,
+        &progress,
+        0,
+        3,
+        1,
+        std::env::temp_dir().join("sci_task_mgr_task_context"),
+        Arc::new(std::sync::atomic::AtomicU64::new(0)),
+        compute_pool,
+    );
 
     task.evolve_one_epoch(&context).expect("task should evolve");
     store.drain();

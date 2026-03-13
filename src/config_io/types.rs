@@ -1,13 +1,12 @@
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-use toml::Value;
 
 use super::{ConfigError, load_config, validate_config};
 
-/// Top-level manager-owned config envelope.
+/// Top-level task-group config owned by the manager.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct ManagerConfig {
+pub struct TaskGroupConfig {
     /// Version of the manager envelope schema expected by this crate.
     pub schema_version: u64,
     /// Run-level metadata used by the manager.
@@ -17,11 +16,9 @@ pub struct ManagerConfig {
     /// Optional manager-owned progress settings.
     #[serde(default)]
     pub progress: Option<ProgressConfig>,
-    /// Task-owned payload left opaque to the manager.
-    pub task: Value,
 }
 
-impl ManagerConfig {
+impl TaskGroupConfig {
     /// Validate this parsed config against the manager envelope rules.
     pub fn validate(&self) -> Result<(), ConfigError> {
         validate_config(self)
@@ -33,6 +30,9 @@ impl ManagerConfig {
     }
 }
 
+/// Backward-compatible alias for the manager-owned task-group config.
+pub type ManagerConfig = TaskGroupConfig;
+
 /// Universal run metadata needed before task-specific parsing begins.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RunConfig {
@@ -43,9 +43,6 @@ pub struct RunConfig {
     /// Maximum number of threads one task may use for its own internal work.
     #[serde(alias = "NUM_THREADS")]
     pub num_threads: usize,
-    /// Optional number of task instances requested by the user.
-    #[serde(default)]
-    pub num_tasks: Option<usize>,
     /// Optional cap on how many tasks may advance concurrently within one group epoch.
     #[serde(default, alias = "NUM_TASK_THREADS")]
     pub num_task_threads: Option<usize>,
@@ -57,14 +54,22 @@ pub struct RunConfig {
 /// Generic directories used by the manager.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct IoConfig {
-    /// Base directory for task-owned outputs and trajectories.
-    pub task_dir: String,
+    /// Base directory for one managed task group.
+    pub task_group_dir: String,
 }
 
 impl IoConfig {
-    /// Return the trajectory directory implied by `task_dir`.
-    pub fn trajectory_dir(&self) -> String {
-        format!("{}/trajectories", self.task_dir.trim_end_matches('/'))
+    /// Return the task directory derived for one task index.
+    pub fn task_dir(&self, task_index: usize) -> String {
+        format!(
+            "{}/tasks/task_{task_index:04}",
+            self.task_group_dir.trim_end_matches('/')
+        )
+    }
+
+    /// Return the trajectory directory derived for one task index.
+    pub fn trajectory_dir(&self, task_index: usize) -> String {
+        format!("{}/trajectories", self.task_dir(task_index))
     }
 }
 
