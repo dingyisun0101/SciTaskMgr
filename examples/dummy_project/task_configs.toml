@@ -1,0 +1,14 @@
+[[tasks]]
+mission = "alpha"
+steps = [3, 4]
+drift = 0.5
+
+[[tasks]]
+mission = "beta"
+steps = [5, 8]
+drift = 1.25
+
+[[tasks]]
+mission = "gamma"
+steps = [13, 21]
+drift = 2.0

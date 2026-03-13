@@ -47,6 +47,7 @@ Examples:
 
 - [`examples/task_group_config.toml`](/home/mgr/Projects/sci_task_mgr/examples/task_group_config.toml)
 - [`examples/task_config.toml`](/home/mgr/Projects/sci_task_mgr/examples/task_config.toml)
+- [`examples/dummy_project/task_configs.toml`](/home/mgr/Projects/sci_task_mgr/examples/dummy_project/task_configs.toml)
 
 Current task-group-owned envelope:
 
@@ -57,7 +58,8 @@ Current task-group-owned envelope:
 
 Task-owned scientific config lives separately, either as a TOML file loaded with `load_task_config(...)` or as programmatic `Vec<T::Config>` values.
 
-The `io.task_group_dir` field is the only required manager-owned path. Per-task directories are derived automatically under `task_group_dir/tasks/task_XXXX`.
+The `io.task_group_dir` field is the only required manager-owned path. Per-task directories are derived automatically from each task config under `task_group_dir/tasks/`.
+Each task writes all epoch JSON files directly into its own `trajectories/` directory, with the epoch encoded in the filename such as `epoch_3_state_0.json`.
 
 ## Core API
 

@@ -102,7 +102,7 @@ impl<'a> TaskContext<'a> {
     fn next_trajectory_path(&self, label: &str) -> PathBuf {
         let submission_index = self.submission_counter.fetch_add(1, Ordering::Relaxed);
         self.trajectory_dir.join(format!(
-            "epoch_{:010}/{}_{}.json",
+            "epoch_{}_{}_{}.json",
             self.epoch,
             sanitize_label(label),
             submission_index

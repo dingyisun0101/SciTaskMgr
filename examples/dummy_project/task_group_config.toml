@@ -1,0 +1,15 @@
+schema_version = 1
+
+[run]
+name = "dummy_project"
+task_type = "dummy_task"
+num_threads = 2
+num_task_threads = 2
+max_epochs = 3
+
+[io]
+task_group_dir = "/tmp/sci_task_mgr_dummy_project"
+
+[progress]
+enabled = true
+refresh_hz = 2

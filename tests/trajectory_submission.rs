@@ -91,8 +91,7 @@ fn task_submits_epoch_trajectory_through_context_hub() {
         .join("tasks")
         .join("initial_epoch-0")
         .join("trajectories")
-        .join("epoch_0000000001")
-        .join("state_0.json");
+        .join("epoch_1_state_0.json");
     let loaded =
         Trajectory::from_json(&output_path, false).expect("trajectory written by hub should load");
     let state = loaded

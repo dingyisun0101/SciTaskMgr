@@ -149,7 +149,7 @@ dependencies = [
 
 [[package]]
 name = "sci_task_mgr"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "rayon",
  "sci_task_io",

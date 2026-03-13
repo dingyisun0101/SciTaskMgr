@@ -117,17 +117,35 @@ struct DemoTaskConfig {
     steps: Vec<u64>,
 }
 
+/// Minimal task-config list wrapper used to verify separate task-config loading.
+#[derive(Debug, Deserialize, PartialEq)]
+struct DemoTaskConfigList {
+    tasks: Vec<DemoTaskConfig>,
+}
+
 /// Verify that task-owned config can be loaded independently from the task-group config.
 #[test]
 fn loads_task_owned_toml_config() {
-    let path = "/home/mgr/Projects/sci_task_mgr/examples/task_config.toml";
-    let config: DemoTaskConfig = load_task_config(path).expect("task config should load");
+    let path = "/home/mgr/Projects/sci_task_mgr/examples/dummy_project/task_configs.toml";
+    let config: DemoTaskConfigList = load_task_config(path).expect("task config should load");
 
     assert_eq!(
         config,
-        DemoTaskConfig {
-            mission: "batch-2".to_string(),
-            steps: vec![3, 4],
+        DemoTaskConfigList {
+            tasks: vec![
+                DemoTaskConfig {
+                    mission: "alpha".to_string(),
+                    steps: vec![3, 4],
+                },
+                DemoTaskConfig {
+                    mission: "beta".to_string(),
+                    steps: vec![5, 8],
+                },
+                DemoTaskConfig {
+                    mission: "gamma".to_string(),
+                    steps: vec![13, 21],
+                },
+            ],
         }
     );
 }
